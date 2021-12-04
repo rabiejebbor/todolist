@@ -1,0 +1,10 @@
+<template name="adminPanel">
+  <div class="container">
+    <header>
+      <h1>Admin panel - Number of users: {{usersCount}}</h1>
+    </header>
+    <ul>
+      {{#each users}} {{> user}} {{/each}}
+    </ul>
+  </div>
+</template>

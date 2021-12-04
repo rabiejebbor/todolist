@@ -1,0 +1,25 @@
+<template name="todoList">
+  <div class="container">
+    <header>
+      <h1>Todo List ({{incompleteCount}})</h1>
+
+      <label class="hide-completed">
+        <input type="checkbox" />
+        Hide Completed Tasks
+      </label>
+
+      {{> loginButtons}}{{#if currentUser}}
+      <form class="new-task">
+        <input type="text" name="text" placeholder="Type to add new tasks" />
+      </form>
+      {{/if}}
+    </header>
+    {{#if currUserIsBanned}}
+    <h1>You are Banned!!</h1>
+    {{else}}
+    <ul>
+      {{#each tasks}} {{> task}} {{/each}}
+    </ul>
+    {{/if}}
+  </div>
+</template>

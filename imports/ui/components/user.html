@@ -1,0 +1,11 @@
+<template name="user">
+  <li>
+    <button class="delete">&times;</button>
+
+    <button class="toggle-banned">
+      {{#if isBanned}} Unban {{else}} Ban {{/if}}
+    </button>
+
+    <span class="text"><strong>Username</strong> - {{username}} {{_id}}</span>
+  </li>
+</template>
