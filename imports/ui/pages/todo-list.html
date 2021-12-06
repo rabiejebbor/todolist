@@ -20,6 +20,12 @@
     <ul>
       {{#each tasks}} {{> task}} {{/each}}
     </ul>
-    {{/if}}
+    {{#if paginationNeeded}}
+    <button class="prev-button">prev</button>
+    {{#each paginationNumbers}}
+    <button class="page-number" value="{{num}}">{{num}}</button>
+    {{/each}}
+    <button class="next-button">next</button>
+    {{/if}} {{/if}}
   </div>
 </template>

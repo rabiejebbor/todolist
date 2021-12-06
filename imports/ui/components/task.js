@@ -4,6 +4,7 @@ import "./task.html";
 
 Template.task.helpers({
   isOwner() {
+    // console.log(Template.instance());
     return this.owner === Meteor.userId();
   },
 });

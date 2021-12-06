@@ -5,8 +5,13 @@ export const Users = Meteor.users;
 
 if (Meteor.isServer) {
   // This code only runs on the server
-  Meteor.publish("userData", function usersPublication() {
-    return Users.find({}, { fields: { username: 1, isBanned: 1 } });
+  Meteor.publish("userData", function usersPublication(num) {
+    check(num, Number);
+    Counts.publish(this, "totalUsers", Users.find());
+    return Users.find(
+      {},
+      { limit: num || 10, fields: { username: 1, isBanned: 1 } }
+    );
   });
   Meteor.publish("userx", function userxPublication() {
     return Users.find(

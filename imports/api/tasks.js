@@ -6,10 +6,28 @@ export const Tasks = new Mongo.Collection("tasks");
 
 if (Meteor.isServer) {
   // This code only runs on the server
-  Meteor.publish("tasks", function tasksPublication() {
-    return Tasks.find({
-      $or: [{ private: { $ne: true } }, { owner: this.userId }],
-    });
+  Meteor.publish("tasks", function tasksPublication(from) {
+    check(from, Number);
+
+    Counts.publish(
+      this,
+      "totalTasks",
+      Tasks.find({
+        $or: [{ private: { $ne: true } }, { owner: this.userId }],
+      })
+    );
+
+    // console.log(Tasks);
+    return Tasks.find(
+      {
+        $or: [{ private: { $ne: true } }, { owner: this.userId }],
+      },
+      {
+        sort: { createdAt: -1 },
+        skip: from,
+        limit: 10,
+      }
+    );
   });
 }
 
@@ -68,5 +86,8 @@ Meteor.methods({
     }
 
     Tasks.update(taskId, { $set: { private: setToPrivate } });
+  },
+  "tasks.count"() {
+    return Tasks.find().count();
   },
 });

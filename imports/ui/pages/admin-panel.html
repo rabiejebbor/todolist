@@ -6,5 +6,8 @@
     <ul>
       {{#each users}} {{> user}} {{/each}}
     </ul>
+    {{#if moreNeeded}}
+    <button class="more-button">more</button>
+    {{/if}}
   </div>
 </template>
