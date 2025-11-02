@@ -1,5 +1,5 @@
 <template name="task">
-  <li class="{{#if checked}}checked{{/if}} {{#if private}}private{{/if}}">
+  <li class="{{#if checked}}checked{{/if}} {{#if private}}private{{/if}} {{#if isEditing}}editing{{/if}} priority-{{priority}}">
     <button class="delete">&times;</button>
 
     <input type="checkbox" checked="{{checked}}" class="toggle-checked" />
@@ -10,6 +10,25 @@
     </button>
     {{/if}}
 
+    {{#if isEditing}}
+    <input type="text" class="edit-task-input" value="{{text}}" />
+    <select class="edit-priority-select">
+      <option value="low" {{#if isLowPriority}}selected{{/if}}>Low</option>
+      <option value="medium" {{#if isMediumPriority}}selected{{/if}}>Medium</option>
+      <option value="high" {{#if isHighPriority}}selected{{/if}}>High</option>
+    </select>
+    <input type="date" class="edit-due-date" value="{{dueDateValue}}" />
+    <button class="save-edit">Save</button>
+    <button class="cancel-edit">Cancel</button>
+    {{else}}
+    <span class="priority-badge">{{priorityLabel}}</span>
     <span class="text"><strong>{{username}}</strong> - {{text}}</span>
+    {{#if dueDate}}
+    <span class="due-date {{#if isOverdue}}overdue{{/if}}">Due: {{formattedDueDate}}</span>
+    {{/if}}
+    {{#if isOwner}}
+    <button class="edit-task">Edit</button>
+    {{/if}}
+    {{/if}}
   </li>
 </template>

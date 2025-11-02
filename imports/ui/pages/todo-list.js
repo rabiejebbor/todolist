@@ -24,18 +24,48 @@ Template.todoList.onCreated(function bodyOnCreated() {
 
 Template.todoList.helpers({
   tasks() {
-    // const instance = Template.instance();
-    // if (instance.state.get("hideCompleted")) {
-    if (TemplateVar.get("hideCompleted")) {
-      // If hide completed is checked, filter tasks
-      return Tasks.find(
-        { checked: { $ne: true } }
-        // { sort: { createdAt: -1 } }
+    const hideCompleted = TemplateVar.get("hideCompleted");
+    const searchQuery = TemplateVar.get("searchQuery") || "";
+    const sortBy = TemplateVar.get("sortBy") || "date";
+    const filterPriority = TemplateVar.get("filterPriority") || "all";
+
+    // Build query
+    const query = {};
+
+    if (hideCompleted) {
+      query.checked = { $ne: true };
+    }
+
+    if (filterPriority !== "all") {
+      query.priority = filterPriority;
+    }
+
+    // Get all tasks matching the query
+    let tasks = Tasks.find(query).fetch();
+
+    // Apply search filter
+    if (searchQuery) {
+      tasks = tasks.filter(task =>
+        task.text.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
-    // Otherwise, return all of the tasks
-    // return Tasks.find({}, { sort: { createdAt: -1 } });
-    return Tasks.find({});
+
+    // Apply sorting
+    if (sortBy === "priority") {
+      const priorityOrder = { high: 1, medium: 2, low: 3 };
+      tasks.sort((a, b) => {
+        const aPriority = priorityOrder[a.priority || "medium"];
+        const bPriority = priorityOrder[b.priority || "medium"];
+        return aPriority - bPriority;
+      });
+    } else if (sortBy === "name") {
+      tasks.sort((a, b) => a.text.localeCompare(b.text));
+    } else {
+      // Sort by date (default)
+      tasks.sort((a, b) => b.createdAt - a.createdAt);
+    }
+
+    return tasks;
   },
   incompleteCount() {
     return Tasks.find({ checked: { $ne: true } }).count();
@@ -55,11 +85,22 @@ Template.todoList.helpers({
   },
   paginationNumbers() {
     const numberOfPages = Math.ceil(Counts.get("totalTasks") / itemsPerPage);
+    const currentPage = Math.floor((+FlowRouter.getQueryParam("from") || 0) / itemsPerPage) + 1;
+
     array = Array.from({ length: numberOfPages }, (_, i) => ({
       num: i + 1,
+      isCurrentPage: i + 1 === currentPage,
     }));
 
     return array;
+  },
+  hasPrevPage() {
+    const currentFrom = +FlowRouter.getQueryParam("from") || 0;
+    return currentFrom >= itemsPerPage;
+  },
+  hasNextPage() {
+    const currentFrom = +FlowRouter.getQueryParam("from") || 0;
+    return currentFrom + itemsPerPage < Counts.get("totalTasks");
   },
 });
 
@@ -71,18 +112,31 @@ Template.todoList.events({
     // Get value from form element
     const target = event.target;
     const text = target.text.value;
+    const priority = target.priority.value;
+    const dueDate = target.dueDate.value;
 
     if (!text) return;
 
     // Insert a task into the collection
-    Meteor.call("tasks.insert", text);
+    Meteor.call("tasks.insert", text, priority, dueDate);
 
     // Clear form
     target.text.value = "";
+    target.priority.value = "medium";
+    target.dueDate.value = "";
   },
   "change .hide-completed input"(event, instance) {
     // instance.state.set("hideCompleted", event.target.checked);
     TemplateVar.set("hideCompleted", event.target.checked);
+  },
+  "input .search-input"(event) {
+    TemplateVar.set("searchQuery", event.target.value);
+  },
+  "change .sort-select"(event) {
+    TemplateVar.set("sortBy", event.target.value);
+  },
+  "change .filter-priority"(event) {
+    TemplateVar.set("filterPriority", event.target.value);
   },
 
   "click .next-button"(event) {

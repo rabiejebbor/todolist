@@ -31,6 +31,33 @@ header {
   position: relative;
 }
 
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 10px 0;
+  align-items: center;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.sort-select,
+.filter-priority {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.9em;
+  background-color: white;
+  cursor: pointer;
+}
+
 #login-buttons {
   display: block;
 }
@@ -102,6 +129,104 @@ li.private {
   border-color: #ddd;
 }
 
+/* Priority Styling */
+li.priority-high {
+  border-left: 4px solid #ff4444;
+}
+
+li.priority-medium {
+  border-left: 4px solid #ffaa00;
+}
+
+li.priority-low {
+  border-left: 4px solid #4caf50;
+}
+
+.priority-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 0.75em;
+  font-weight: bold;
+  margin-right: 8px;
+  text-transform: uppercase;
+}
+
+li.priority-high .priority-badge {
+  background-color: #ff4444;
+  color: white;
+}
+
+li.priority-medium .priority-badge {
+  background-color: #ffaa00;
+  color: white;
+}
+
+li.priority-low .priority-badge {
+  background-color: #4caf50;
+  color: white;
+}
+
+.priority-select,
+.edit-priority-select {
+  padding: 5px 10px;
+  margin: 5px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  font-size: 0.9em;
+}
+
+.edit-task-input {
+  flex: 1;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  margin-right: 5px;
+}
+
+.save-edit,
+.cancel-edit,
+.edit-task {
+  padding: 5px 10px;
+  margin-left: 5px;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.85em;
+}
+
+.save-edit {
+  background-color: #4caf50;
+  color: white;
+}
+
+.save-edit:hover {
+  background-color: #45a049;
+}
+
+.cancel-edit {
+  background-color: #f44336;
+  color: white;
+}
+
+.cancel-edit:hover {
+  background-color: #da190b;
+}
+
+.edit-task {
+  background-color: #2196f3;
+  color: white;
+}
+
+.edit-task:hover {
+  background-color: #0b7dda;
+}
+
+li.editing {
+  background-color: #f9f9f9;
+  padding: 15px;
+}
+
 header .hide-completed {
   float: right;
 }
@@ -110,17 +235,152 @@ header .hide-completed {
   margin-left: 5px;
 }
 
+/* Due Date Styling */
+.due-date {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.8em;
+  margin-left: 10px;
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.due-date.overdue {
+  background-color: #ffebee;
+  color: #c62828;
+  font-weight: bold;
+}
+
+.due-date-input,
+.edit-due-date {
+  padding: 5px;
+  margin: 5px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  font-size: 0.9em;
+}
+
+/* Pagination Styling */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  gap: 5px;
+  background: #f5f5f5;
+  border-top: 1px solid #e0e0e0;
+}
+
+.pagination-button {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  background-color: white;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 0.9em;
+  transition: all 0.2s;
+}
+
+.pagination-button:hover:not(:disabled) {
+  background-color: #f0f0f0;
+  border-color: #999;
+}
+
+.pagination-button.active {
+  background-color: #2196f3;
+  color: white;
+  border-color: #2196f3;
+  font-weight: bold;
+}
+
+.pagination-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.prev-button,
+.next-button {
+  font-weight: 500;
+}
+
 @media (max-width: 600px) {
   li {
     padding: 12px 15px;
   }
 
-  .search {
-    width: 150px;
-    clear: both;
+  .filters {
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .new-task input {
-    padding-bottom: 5px;
+  .search-input {
+    width: 100%;
+  }
+
+  .sort-select,
+  .filter-priority {
+    width: 100%;
+  }
+
+  .hide-completed {
+    width: 100%;
+  }
+
+  .new-task {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .new-task input[type="text"],
+  .priority-select,
+  .due-date-input {
+    width: 100%;
+    margin: 0;
+  }
+
+  .priority-badge {
+    font-size: 0.65em;
+    padding: 2px 6px;
+  }
+
+  .text {
+    display: block;
+    margin-top: 5px;
+  }
+
+  .edit-task,
+  .save-edit,
+  .cancel-edit {
+    font-size: 0.75em;
+    padding: 4px 8px;
+  }
+
+  li.editing {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .edit-task-input,
+  .edit-priority-select,
+  .edit-due-date {
+    width: 100%;
+    margin: 2px 0;
+  }
+
+  .pagination {
+    flex-wrap: wrap;
+    padding: 10px;
+  }
+
+  .pagination-button {
+    padding: 6px 10px;
+    font-size: 0.8em;
+  }
+
+  h1 {
+    font-size: 1.2em;
   }
 }

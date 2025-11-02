@@ -32,8 +32,10 @@ if (Meteor.isServer) {
 }
 
 Meteor.methods({
-  "tasks.insert"(text) {
+  "tasks.insert"(text, priority = "medium", dueDate) {
     check(text, String);
+    check(priority, String);
+    check(dueDate, Match.Optional(String));
 
     // Make sure the user is logged in before inserting a task
     if (!this.userId) {
@@ -44,12 +46,19 @@ Meteor.methods({
     //   throw new Meteor.Error("no-textValue");
     // }
 
-    Tasks.insert({
+    const taskData = {
       text,
+      priority,
       createdAt: new Date(),
       owner: this.userId,
       username: Meteor.users.findOne(this.userId).username,
-    });
+    };
+
+    if (dueDate) {
+      taskData.dueDate = new Date(dueDate);
+    }
+
+    Tasks.insert(taskData);
   },
   "tasks.remove"(taskId) {
     check(taskId, String);
@@ -86,6 +95,29 @@ Meteor.methods({
     }
 
     Tasks.update(taskId, { $set: { private: setToPrivate } });
+  },
+  "tasks.update"(taskId, newText, newPriority, newDueDate) {
+    check(taskId, String);
+    check(newText, String);
+    check(newPriority, String);
+    check(newDueDate, Match.Optional(String));
+
+    const task = Tasks.findOne(taskId);
+
+    // Make sure only the task owner can edit the task
+    if (task.owner !== this.userId) {
+      throw new Meteor.Error("not-authorized");
+    }
+
+    const updateData = { text: newText, priority: newPriority };
+
+    if (newDueDate) {
+      updateData.dueDate = new Date(newDueDate);
+    } else {
+      updateData.dueDate = null;
+    }
+
+    Tasks.update(taskId, { $set: updateData });
   },
   "tasks.count"() {
     return Tasks.find().count();

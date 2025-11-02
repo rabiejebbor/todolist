@@ -3,14 +3,37 @@
     <header>
       <h1>Todo List ({{incompleteCount}})</h1>
 
-      <label class="hide-completed">
-        <input type="checkbox" />
-        Hide Completed Tasks
-      </label>
+      <div class="filters">
+        <label class="hide-completed">
+          <input type="checkbox" />
+          Hide Completed Tasks
+        </label>
+
+        <input type="text" class="search-input" placeholder="Search tasks..." />
+
+        <select class="sort-select">
+          <option value="date">Sort by Date</option>
+          <option value="priority">Sort by Priority</option>
+          <option value="name">Sort by Name</option>
+        </select>
+
+        <select class="filter-priority">
+          <option value="all">All Priorities</option>
+          <option value="high">High Priority</option>
+          <option value="medium">Medium Priority</option>
+          <option value="low">Low Priority</option>
+        </select>
+      </div>
 
       {{> loginButtons}}{{#if currentUser}}
       <form class="new-task">
         <input type="text" name="text" placeholder="Type to add new tasks" />
+        <select name="priority" class="priority-select">
+          <option value="low">Low Priority</option>
+          <option value="medium" selected>Medium Priority</option>
+          <option value="high">High Priority</option>
+        </select>
+        <input type="date" name="dueDate" class="due-date-input" />
       </form>
       {{/if}}
     </header>
@@ -21,11 +44,19 @@
       {{#each tasks}} {{> task}} {{/each}}
     </ul>
     {{#if paginationNeeded}}
-    <button class="prev-button">prev</button>
-    {{#each paginationNumbers}}
-    <button class="page-number" value="{{num}}">{{num}}</button>
-    {{/each}}
-    <button class="next-button">next</button>
+    <div class="pagination">
+      <button class="pagination-button prev-button" {{#unless hasPrevPage}}disabled{{/unless}}>
+        &laquo; Previous
+      </button>
+      {{#each paginationNumbers}}
+      <button class="pagination-button page-number {{#if isCurrentPage}}active{{/if}}" value="{{num}}">
+        {{num}}
+      </button>
+      {{/each}}
+      <button class="pagination-button next-button" {{#unless hasNextPage}}disabled{{/unless}}>
+        Next &raquo;
+      </button>
+    </div>
     {{/if}} {{/if}}
   </div>
 </template>
