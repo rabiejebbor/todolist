@@ -1,0 +1,119 @@
+{
+  "name": "Tool: Search GitHub Code Implementation",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "webhook-search-code",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "search-github-code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get search parameters\nconst query = $json.query;\nconst context = $executionData.context || {};\nconst repoOwner = context.repo_owner || $json.repo_owner;\nconst repoName = context.repo_name || $json.repo_name;\n\n// Build GitHub search query\nconst searchQuery = `${query} repo:${repoOwner}/${repoName}`;\n\nreturn {\n  json: {\n    query: searchQuery,\n    repo_owner: repoOwner,\n    repo_name: repoName\n  }\n};"
+      },
+      "id": "parse-search-input",
+      "name": "Parse Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "url": "=https://api.github.com/search/code?q={{ encodeURIComponent($json.query) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "search-code-api",
+      "name": "Search Code API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\n\n// Extract relevant search results\nconst items = response.items || [];\nconst results = items.slice(0, 10).map(item => ({\n  path: item.path,\n  repository: item.repository.full_name,\n  url: item.html_url,\n  score: item.score\n}));\n\nreturn {\n  json: {\n    total_count: response.total_count || 0,\n    results: results\n  }\n};"
+      },
+      "id": "format-results",
+      "name": "Format Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}"
+      },
+      "id": "return-search-result",
+      "name": "Return Result",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1120, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Parse Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Input": {
+      "main": [
+        [
+          {
+            "node": "Search Code API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Code API": {
+      "main": [
+        [
+          {
+            "node": "Format Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Results": {
+      "main": [
+        [
+          {
+            "node": "Return Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-01-14T12:00:00.000Z",
+  "versionId": "1"
+}
