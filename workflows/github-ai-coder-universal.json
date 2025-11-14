@@ -1,0 +1,380 @@
+{
+  "name": "GitHub AI Coder - Universal (Works Everywhere)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-01",
+      "name": "When clicking 'Test workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 400]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "feature_ticket",
+              "name": "feature_ticket",
+              "value": "={{ $json.feature_ticket || 'Add a new feature' }}",
+              "type": "string"
+            },
+            {
+              "id": "repo_owner",
+              "name": "repo_owner",
+              "value": "={{ $json.repo_owner || 'your-username' }}",
+              "type": "string"
+            },
+            {
+              "id": "repo_name",
+              "name": "repo_name",
+              "value": "={{ $json.repo_name || 'your-repo' }}",
+              "type": "string"
+            },
+            {
+              "id": "base_branch",
+              "name": "base_branch",
+              "value": "={{ $json.base_branch || 'main' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "input-01",
+      "name": "Input Parameters",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [460, 400]
+    },
+    {
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "url": "=https://api.github.com/repos/{{ $json.repo_owner }}/{{ $json.repo_name }}",
+        "options": {}
+      },
+      "id": "github-repo-01",
+      "name": "GitHub: Get Repository",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 400]
+    },
+    {
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "url": "=https://api.github.com/repos/{{ $('Input Parameters').item.json.repo_owner }}/{{ $('Input Parameters').item.json.repo_name }}/git/refs/heads/{{ $('Input Parameters').item.json.base_branch }}",
+        "options": {}
+      },
+      "id": "github-sha-01",
+      "name": "GitHub: Get Branch SHA",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare context for Claude AI\nconst input = $('Input Parameters').item.json;\nconst repoInfo = $('GitHub: Get Repository').item.json;\nconst branchInfo = $('GitHub: Get Branch SHA').item.json;\n\n// Generate unique branch name\nconst timestamp = Date.now();\nconst featureSlug = input.feature_ticket\n  .toLowerCase()\n  .replace(/[^a-z0-9]+/g, '-')\n  .substring(0, 50);\nconst branchName = `ai-agent/${featureSlug}-${timestamp}`;\n\n// Build Claude AI prompt\nconst systemPrompt = `You are an expert software engineer. Generate production-ready code for the requested feature.\n\nRepository Context:\n- Owner/Repo: ${input.repo_owner}/${input.repo_name}\n- Language: ${repoInfo.language || 'Unknown'}\n- Description: ${repoInfo.description || 'No description'}\n\nIMPORTANT OUTPUT FORMAT:\nReturn ONLY a valid JSON object (no markdown, no code blocks, just pure JSON):\n\n{\n  \"implementation_plan\": \"Brief explanation of your approach\",\n  \"files\": [\n    {\n      \"path\": \"relative/path/to/file.ext\",\n      \"content\": \"complete file content here\",\n      \"action\": \"create\"\n    }\n  ],\n  \"pr_title\": \"feat: Concise PR title\",\n  \"pr_description\": \"## Summary\\\\nWhat was implemented\\\\n\\\\n## Testing\\\\nHow to test it\"\n}\n\nRules:\n- Generate clean, well-documented, production-ready code\n- Follow best practices for ${repoInfo.language || 'the language'}\n- Include error handling\n- Keep it simple and maintainable`;\n\nreturn {\n  json: {\n    system_prompt: systemPrompt,\n    user_message: input.feature_ticket,\n    repo_owner: input.repo_owner,\n    repo_name: input.repo_name,\n    base_branch: input.base_branch,\n    branch_name: branchName,\n    base_sha: branchInfo.object.sha\n  }\n};"
+      },
+      "id": "prepare-01",
+      "name": "Prepare AI Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 400]
+    },
+    {
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ {\n  \"model\": \"claude-3-5-sonnet-20241022\",\n  \"max_tokens\": 8000,\n  \"temperature\": 0.3,\n  \"system\": $json.system_prompt,\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": $json.user_message\n    }\n  ]\n} }}",
+        "options": {}
+      },
+      "id": "claude-api-01",
+      "name": "Claude: Generate Code",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse Claude's response\nconst response = $input.item.json;\nconst context = $('Prepare AI Context').item.json;\n\n// Extract AI response text\nconst aiText = response.content[0].text;\n\n// Clean up response (remove markdown if present)\nlet cleanedText = aiText.trim();\nif (cleanedText.startsWith('```')) {\n  cleanedText = cleanedText\n    .replace(/```json\\n?/g, '')\n    .replace(/```\\n?/g, '')\n    .trim();\n}\n\n// Parse JSON\nconst parsed = JSON.parse(cleanedText);\n\nreturn {\n  json: {\n    ...context,\n    implementation_plan: parsed.implementation_plan,\n    files: parsed.files || [],\n    pr_title: parsed.pr_title,\n    pr_description: parsed.pr_description\n  }\n};"
+      },
+      "id": "parse-01",
+      "name": "Parse AI Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 400]
+    },
+    {
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "method": "POST",
+        "url": "=https://api.github.com/repos/{{ $json.repo_owner }}/{{ $json.repo_name }}/git/refs",
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ {\n  \"ref\": \"refs/heads/\" + $json.branch_name,\n  \"sha\": $json.base_sha\n} }}",
+        "options": {}
+      },
+      "id": "github-branch-01",
+      "name": "GitHub: Create Branch",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1780, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Split files into separate items for committing\nconst data = $input.item.json;\nconst files = data.files || [];\n\nif (files.length === 0) {\n  throw new Error('No files generated by AI');\n}\n\nreturn files.map(file => ({\n  json: {\n    file_path: file.path,\n    file_content: file.content,\n    file_action: file.action || 'create',\n    branch_name: data.branch_name,\n    repo_owner: data.repo_owner,\n    repo_name: data.repo_name,\n    pr_title: data.pr_title,\n    pr_description: data.pr_description,\n    base_branch: data.base_branch,\n    implementation_plan: data.implementation_plan\n  }\n}));"
+      },
+      "id": "split-01",
+      "name": "Split Files for Commit",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2000, 400]
+    },
+    {
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "method": "PUT",
+        "url": "=https://api.github.com/repos/{{ $json.repo_owner }}/{{ $json.repo_name }}/contents/{{ $json.file_path }}",
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ {\n  \"message\": $json.file_action + \": \" + $json.file_path,\n  \"content\": $base64Encode($json.file_content),\n  \"branch\": $json.branch_name\n} }}",
+        "options": {}
+      },
+      "id": "github-commit-01",
+      "name": "GitHub: Commit File",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2220, 400]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "id": "aggregate-01",
+      "name": "Wait for All Commits",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [2440, 400]
+    },
+    {
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "method": "POST",
+        "url": "=https://api.github.com/repos/{{ $json.repo_owner }}/{{ $json.repo_name }}/pulls",
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ {\n  \"title\": $json.pr_title,\n  \"body\": $json.pr_description + \"\\n\\n---\\n\\n🤖 **This PR was automatically generated by AI**\\n\\n**Implementation Plan:**\\n\" + $json.implementation_plan,\n  \"head\": $json.branch_name,\n  \"base\": $json.base_branch\n} }}",
+        "options": {}
+      },
+      "id": "github-pr-01",
+      "name": "GitHub: Create Pull Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2660, 400]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "pr_url",
+              "name": "pr_url",
+              "value": "={{ $json.html_url }}",
+              "type": "string"
+            },
+            {
+              "id": "pr_number",
+              "name": "pr_number",
+              "value": "={{ $json.number }}",
+              "type": "number"
+            },
+            {
+              "id": "files_changed",
+              "name": "files_changed",
+              "value": "={{ $('Split Files for Commit').all().length }}",
+              "type": "number"
+            },
+            {
+              "id": "success_message",
+              "name": "success_message",
+              "value": "=✅ Pull Request #{{ $json.number }} Created!\\n🔗 {{ $json.html_url }}\\n📝 {{ $('Split Files for Commit').all().length }} files changed",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "output-01",
+      "name": "Success! PR Created",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [2880, 400]
+    }
+  ],
+  "connections": {
+    "When clicking 'Test workflow'": {
+      "main": [
+        [
+          {
+            "node": "Input Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Input Parameters": {
+      "main": [
+        [
+          {
+            "node": "GitHub: Get Repository",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub: Get Repository": {
+      "main": [
+        [
+          {
+            "node": "GitHub: Get Branch SHA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub: Get Branch SHA": {
+      "main": [
+        [
+          {
+            "node": "Prepare AI Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare AI Context": {
+      "main": [
+        [
+          {
+            "node": "Claude: Generate Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude: Generate Code": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Response": {
+      "main": [
+        [
+          {
+            "node": "GitHub: Create Branch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub: Create Branch": {
+      "main": [
+        [
+          {
+            "node": "Split Files for Commit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Files for Commit": {
+      "main": [
+        [
+          {
+            "node": "GitHub: Commit File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub: Commit File": {
+      "main": [
+        [
+          {
+            "node": "Wait for All Commits",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for All Commits": {
+      "main": [
+        [
+          {
+            "node": "GitHub: Create Pull Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub: Create Pull Request": {
+      "main": [
+        [
+          {
+            "node": "Success! PR Created",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-01-14T15:00:00.000Z",
+  "versionId": "1"
+}
