@@ -1,0 +1,83 @@
+{
+  "examples": [
+    {
+      "name": "Simple Feature Addition",
+      "input": {
+        "feature_ticket": "Add a new REST API endpoint for user profile updates with validation",
+        "repo_owner": "your-username",
+        "repo_name": "user-api",
+        "base_branch": "main"
+      }
+    },
+    {
+      "name": "Authentication Feature",
+      "input": {
+        "feature_ticket": "Implement JWT-based authentication system:\n- Login endpoint with email/password\n- Token generation and validation\n- Refresh token mechanism\n- Logout endpoint\n- Middleware for protecting routes",
+        "repo_owner": "your-org",
+        "repo_name": "backend-service",
+        "base_branch": "develop"
+      }
+    },
+    {
+      "name": "Database Migration",
+      "input": {
+        "feature_ticket": "Create database migration for user roles:\n- Add roles table (id, name, permissions)\n- Add user_roles junction table\n- Update users table with role_id foreign key\n- Include rollback migration",
+        "repo_owner": "your-company",
+        "repo_name": "database-migrations",
+        "base_branch": "main"
+      }
+    },
+    {
+      "name": "React Component",
+      "input": {
+        "feature_ticket": "Build a reusable DataTable component in React:\n- Support pagination\n- Column sorting\n- Search/filter functionality\n- Row selection\n- Export to CSV\n- TypeScript types\n- Unit tests with Jest",
+        "repo_owner": "frontend-team",
+        "repo_name": "component-library",
+        "base_branch": "main"
+      }
+    },
+    {
+      "name": "Bug Fix",
+      "input": {
+        "feature_ticket": "Fix memory leak in WebSocket connection:\n- Issue: WebSocket connections not properly closed\n- Location: src/services/websocket.ts\n- Expected: Connections should close on component unmount\n- Add cleanup logic and tests",
+        "repo_owner": "your-username",
+        "repo_name": "realtime-app",
+        "base_branch": "main"
+      }
+    },
+    {
+      "name": "Testing Addition",
+      "input": {
+        "feature_ticket": "Add comprehensive unit tests for UserService:\n- Test user creation with valid/invalid data\n- Test user authentication flow\n- Test password hashing\n- Test user update and deletion\n- Mock database calls\n- Achieve 90%+ code coverage",
+        "repo_owner": "backend-team",
+        "repo_name": "user-service",
+        "base_branch": "main"
+      }
+    },
+    {
+      "name": "Documentation",
+      "input": {
+        "feature_ticket": "Create API documentation for payment endpoints:\n- Document all payment-related endpoints\n- Include request/response examples\n- Add error codes and descriptions\n- Include authentication requirements\n- Use OpenAPI/Swagger format",
+        "repo_owner": "docs-team",
+        "repo_name": "api-documentation",
+        "base_branch": "main"
+      }
+    },
+    {
+      "name": "Performance Optimization",
+      "input": {
+        "feature_ticket": "Optimize database queries in reporting module:\n- Identify slow queries (>1s execution time)\n- Add appropriate indexes\n- Implement query result caching\n- Add database query logging\n- Include performance benchmarks",
+        "repo_owner": "performance-team",
+        "repo_name": "analytics-service",
+        "base_branch": "main"
+      }
+    }
+  ],
+  "tips": {
+    "detailed_descriptions": "The more detailed your feature ticket, the better the AI can generate appropriate code",
+    "include_context": "Mention specific files, patterns, or technologies to guide the AI",
+    "specify_tests": "Explicitly request tests if you want them included",
+    "breaking_changes": "Note if the feature should avoid breaking existing functionality",
+    "code_style": "Mention specific coding standards or patterns to follow"
+  }
+}
